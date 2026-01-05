@@ -13,9 +13,9 @@ dotenv.config();
 
 const app = express();
 app.use(cors({
-  origin: ["http://localhost:5173", "http://192.168.100.2:5173"], // ou ton frontend prod
-  methods: ["GET","POST","PUT","DELETE" , "OPTIONS"],
-  credentials: true
+  origin: process.env.CLIENT_URL,
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE"] , 
 }));
 
 
@@ -23,11 +23,46 @@ app.use(express.json());
 
 app.use(cookieParser());
 // Base de données
-const sequelize = new Sequelize({
-  dialect: 'sqlite',
-  storage: path.resolve(process.cwd(), 'placide.db') , 
-  logging: false  ,   // Mettre à true pour voir les requêtes SQL
-})
+// const sequelize = new Sequelize({
+//   dialect: 'sqlite',
+//   storage: path.resolve(process.cwd(), 'placide.db') , 
+//   logging: false  ,   // Mettre à true pour voir les requêtes SQL
+// })
+
+ 
+const isProd = process.env.NODE_ENV === "production";
+
+let sequelize;
+
+if (isProd) {
+  sequelize = new Sequelize(
+    process.env.DB_NAME,
+    process.env.DB_USER,
+    process.env.DB_PASS,
+    {
+      host: process.env.DB_HOST,
+      port: process.env.DB_PORT,
+      dialect: process.env.DB_DIALECT || "postgres",
+      protocol: "postgres",
+      logging: false,
+      dialectOptions: {
+        ssl: {
+          require: true,
+          rejectUnauthorized: false,
+        },
+      },
+    }
+  );
+} else {
+  sequelize = new Sequelize({
+    dialect: "sqlite",
+    storage: "./database.sqlite",
+    logging: false,
+  });
+}
+
+export default sequelize;
+
 
 
 export const redis  = createClient({
@@ -136,7 +171,7 @@ const authenticateToken = (req, res, next) => {
 
 // ========== FONCTION D'ÉVALUATION DE POTABILITÉ ==========
 
-const evaluateWaterQuality = (data) => {
+const evaluateWaterQualityse = (data) => {
   const reasons = [];
   const limits = {
     pH_min: 6.5,
@@ -467,7 +502,7 @@ app.get('/api/dashboard-stats', authenticateToken, async (req, res) => {
 
 // ========== SYNCHRONISATION ET DÉMARRAGE ==========
 
-sequelize.sync({ force : true  }).then(() => {
+sequelize.sync().then(() => {
   app.listen(5000, () => {
     console.log('✓ Serveur démarré sur port 5000');
     console.log('✓ Base de données synchronisée');
