@@ -61,20 +61,11 @@ if (isProd) {
   });
 }
 
-export default sequelize;
+ 
 
+ 
 
-
-export const redis  = createClient({
-  url: "redis://localhost:6379"
-});
-
-redis.on("error", (err) => {
-  console.error("Redis error:", err);
-});
-
-await redis.connect();
-
+ 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-key-change-in-production';
 
 // ========== MODÈLES ==========
