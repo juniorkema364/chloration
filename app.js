@@ -29,39 +29,28 @@ app.use(cookieParser());
 //   logging: false  ,   // Mettre à true pour voir les requêtes SQL
 // })
 
- 
-const isProd = process.env.NODE_ENV === "production";
+const isProd = process.env.NODE_ENV === "production"
 
-let sequelize;
 
-if (isProd) {
-  sequelize = new Sequelize(
-    process.env.DB_NAME,
-    process.env.DB_USER,
-    process.env.DB_PASS,
-    {
-      host: process.env.DB_HOST,
-      port: process.env.DB_PORT,
-      dialect: process.env.DB_DIALECT || "postgres",
-      protocol: "postgres",
-      logging: false,
-      dialectOptions: {
-        ssl: {
-          require: true,
-          rejectUnauthorized: false,
-        },
-      },
-    }
-  );
-} else {
-  sequelize = new Sequelize({
-    dialect: "sqlite",
-    storage: "./database.sqlite",
-    logging: false,
-  });
-}
-
- 
+const sequelize = new Sequelize(
+  process.env.DB_NAME,
+  process.env.DB_USER,
+  process.env.DB_PASS,
+  {
+    host: process.env.DB_HOST,
+    port: process.env.DB_PORT || 5432,
+    dialect: "postgres",
+    logging: true, // logs en local seulement
+    dialectOptions: isProd
+      ? {
+          ssl: {
+            require: true,
+            rejectUnauthorized: false,
+          },
+        }
+      : {}, // 👈 PAS de SSL en local
+  }
+);
 
  
 
@@ -162,7 +151,7 @@ const authenticateToken = (req, res, next) => {
 
 // ========== FONCTION D'ÉVALUATION DE POTABILITÉ ==========
 
-const evaluateWaterQualityse = (data) => {
+const evaluateWaterQuality = (data) => {
   const reasons = [];
   const limits = {
     pH_min: 6.5,
