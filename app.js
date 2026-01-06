@@ -40,7 +40,7 @@ const sequelize = new Sequelize(
     host: process.env.DB_HOST,
     port: process.env.DB_PORT || 5432,
     dialect: "postgres",
-    logging: true, // logs en local seulement
+    logging: !isProd, // logs en local seulement
     dialectOptions: isProd
       ? {
           ssl: {
@@ -323,6 +323,7 @@ app.post('/api/forages', authenticateToken, async (req, res) => {
       return res.status(401).json({ error: "Utilisateur invalide" });
     }
 
+
     const forage = await Forage.create({
       forageId,
       name,
@@ -342,7 +343,7 @@ app.post('/api/forages', authenticateToken, async (req, res) => {
 });
 
 app.get('/api/forages', authenticateToken, async (req, res) => {
-  try {
+  try {      
     const forages = await Forage.findAll({
       where: { UserId: req.user.id },
       include: Analysis
