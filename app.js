@@ -10,52 +10,54 @@ import cookieParser from "cookie-parser";
  
 dotenv.config();
 
-
 const app = express();
+app.use(express.json());
+app.use(cookieParser());
 app.use(cors({
   origin: process.env.CLIENT_URL,
-  credentials: true,
-  methods: ["GET", "POST", "PUT", "DELETE"] , 
+  credentials: true ,
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+
 }));
-
-
-app.use(express.json());
-
-app.use(cookieParser());
-// Base de données
-// const sequelize = new Sequelize({
-//   dialect: 'sqlite',
-//   storage: path.resolve(process.cwd(), 'placide.db') , 
-//   logging: false  ,   // Mettre à true pour voir les requêtes SQL
-// })
-
-const isProd = process.env.NODE_ENV === "production"
-
-
-const sequelize = new Sequelize(
-  process.env.DB_NAME,
-  process.env.DB_USER,
-  process.env.DB_PASS,
-  {
-    host: process.env.DB_HOST,
-    port: process.env.DB_PORT || 5432,
-    dialect: "postgres",
-    logging: !isProd, // logs en local seulement
-    dialectOptions: isProd
-      ? {
-          ssl: {
-            require: true,
-            rejectUnauthorized: false,
-          },
-        }
-      : {}, // 👈 PAS de SSL en local
-  }
-);
-
+              // parser JSON
+app.use(express.urlencoded({ extended: true })); // parser form data
+ 
  
 
  
-const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-key-change-in-production';
+
+const env = process.env.NODE_ENV || "development";
+const isProd = env === "production";
+
+// Choix de la base selon l'environnement
+const DB_USER = isProd ? process.env.PROD_DB_USER : process.env.DEV_DB_USER;
+const DB_PASS = isProd ? process.env.PROD_DB_PASS : process.env.DEV_DB_PASS;
+const DB_HOST = isProd ? process.env.PROD_DB_HOST : process.env.DEV_DB_HOST;
+const DB_NAME = isProd ? process.env.PROD_DB_NAME : process.env.DEV_DB_NAME;
+const DB_PORT = isProd ? process.env.PROD_DB_PORT : process.env.DEV_DB_PORT || 5432;
+
+console.log("Connexion à la DB :", DB_NAME, "host:", DB_HOST, "user:", DB_USER);
+
+
+const sequelize = new Sequelize(DB_NAME, DB_USER, DB_PASS, {
+  host: DB_HOST,
+  port: DB_PORT || 5432,
+  dialect: "postgres",
+  logging: !isProd,
+  dialectOptions: isProd
+    ? {
+        ssl: {
+          require: true,
+          rejectUnauthorized: false, // important pour Render
+        },
+      }
+    : {},
+})
+ 
+
+ 
+const JWT_SECRET = process.env.JWT_SECRET
+
 
 // ========== MODÈLES ==========
 
@@ -345,9 +347,16 @@ app.post('/api/forages', authenticateToken, async (req, res) => {
 app.get('/api/forages', authenticateToken, async (req, res) => {
   try {      
     const forages = await Forage.findAll({
-      where: { UserId: req.user.id },
-      include: Analysis
-    });
+  include: [
+        {
+          model: User,
+          attributes: ['id', 'firstName', 'lastName', 'email']
+        },
+        {
+          model: Analysis
+        }
+      ]
+});
     res.json(forages);
   } catch (error) {
     res.status(400).json({ error: error.message });
@@ -460,13 +469,16 @@ app.get('/api/debug/db', async (req, res) => {
 
 app.get('/api/dashboard-stats', authenticateToken, async (req, res) => {
   try {
-    const forages = await Forage.findAll({ where: { UserId: req.user.id } });
+    const forages = await Forage.findAll();
     const forageIds = forages.map(f => f.id);
     
     const analyses = await Analysis.findAll({
-      where: { ForageId: forageIds }
-    });
-    
+      include: [
+        { model: Forage },
+        { model: User, attributes: ['id', 'firstName', 'lastName'] }
+      ],
+      order: [['analysisDate', 'DESC']]
+    })
     const potable = analyses.filter(a => a.potable).length;
     const nonPotable = analyses.filter(a => !a.potable).length;
     
@@ -481,14 +493,27 @@ app.get('/api/dashboard-stats', authenticateToken, async (req, res) => {
   }
 });
 
-// ========== SYNCHRONISATION ET DÉMARRAGE ==========
 
-sequelize.sync().then(() => {
-  app.listen(5000, () => {
-    console.log('✓ Serveur démarré sur port 5000');
-    console.log('✓ Base de données synchronisée');
-  });
-}).catch(err => {
-  console.error('✗ Erreur BD:', err);
-  process.exit(1);
+ 
+// // OPTIONS pour toutes les routes
+// app.options("*", cors({
+//   origin: CLIENT_URL,
+//   credentials: true,
+// }));
+
+
+// Test DB
+sequelize.authenticate()
+  .then(() => console.log(`✓ Connecté à la DB (${process.env.NODE_ENV})`))
+  .catch(err => console.error("✗ Erreur DB :", err));
+
+app.get("/api", (req, res) => {
+  res.json({ message: "Hello world!", env: process.env.NODE_ENV });
 });
+
+app.listen(process.env.PORT, () => {
+  console.log(`Serveur lancé sur le port ${process.env.PORT}`);
+  console.log('vous etes en mode' , process.env.NODE_ENV)
+});
+
+ 
