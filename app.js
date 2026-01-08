@@ -511,9 +511,9 @@ app.get("/api", (req, res) => {
   res.json({ message: "Hello world!", env: process.env.NODE_ENV });
 });
 
-app.listen(process.env.PORT, '0.0.0.0' ,  () => {
-  console.log(`Serveur lancé sur le port ${process.env.PORT}`);
-  console.log('vous etes en mode' , process.env.NODE_ENV)
-});
+const PORT = process.env.PORT || 3000;
 
- 
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`🚀 Serveur lancé sur le port ${PORT}`);
+  console.log("Mode :", process.env.NODE_ENV);
+});
