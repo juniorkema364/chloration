@@ -7,6 +7,7 @@ app = 'chloration'
 primary_region = 'iad'
 
 [build]
+  builder_memory = "1g"  # par exemple 1 Go au lieu de 512 Mo
 
 [[mounts]]
   source = 'data'

@@ -10,7 +10,7 @@ FROM node:20
 COPY package*.json ./
 
 # 4️⃣ Installer les dépendances en production
-RUN npm install
+RUN npm install --production
 
 # 5️⃣ Copier tout le code source dans le container
 COPY . .
@@ -20,6 +20,8 @@ ENV PORT=5000
 
 # 7️⃣ Exposer le port du container
 EXPOSE 8080
+
+
 
 # 8️⃣ Commande pour démarrer l'application
 CMD ["node", "app.js"]
