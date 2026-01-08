@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node app.js",
     "dev": "cross-env NODE_ENV=development nodemon app.js",
-    "prod": "cross-env NODE_ENV=production nodemon app.js"
+    "prod": "cross-env NODE_ENV=production nodemon app.js", 
+    "postinstall": "npm install"
   },
   "keywords": [],
   "author": "",
@@ -34,8 +35,7 @@
     "npm": "^10.9.4" 
   },
   "devDependencies": {
-    "cors": "^2.8.5",  
-    "dotenv": "^17.2.3",
+     
     "install": "^0.13.0",
     "nodemon": "^3.1.11",
     "npm": "^10.9.4"
