@@ -6,11 +6,14 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
-.env
+.env.production 
+.env.development
+re.text
+ruth.sql
 node_modules
 dist
 dist-ssr
-placide.db
+.placide.db
 *.local
 
 # Editor directories and files
