@@ -503,9 +503,19 @@ app.get('/api/dashboard-stats', authenticateToken, async (req, res) => {
 
 
 // Test DB
-sequelize.authenticate()
-  .then(() => console.log(`✓ Connecté à la DB (${process.env.NODE_ENV})`))
-  .catch(err => console.error("✗ Erreur DB :", err));
+(async () => {
+  try {
+
+    await sequelize.authenticate(); 
+    console.log('Connexion OK')
+
+    await sequelize.sync(); 
+    console.log('Tables OK');
+
+  } catch (error) {
+    console.error ('Erreur Db' , error)
+  }
+})();
 
 app.get("/api", (req, res) => {
   res.json({ message: "Hello world!", env: process.env.NODE_ENV });
